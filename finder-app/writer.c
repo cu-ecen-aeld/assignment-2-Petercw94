@@ -7,25 +7,61 @@
 //
 // Creates a new file with name and path writefile with content writestr, overwriting any existing file and creating the path if it doesn’t exist. Exits with value 1 and error print statement if the file could not be created.
 
+#include <errno.h>
+#include <fcntl.h>
 #include <stdio.h>
+#include <string.h>
+#include <sys/syslog.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/fcntl.h>
+#include <unistd.h>
 #include <syslog.h>
 
 int main(int argc, char *argv[]) {
-	openlog("writer", NULL, LOG_USER);
-	// TODO: check to see if the proper number of arguments were provided
+	openlog(NULL, LOG_CONS, LOG_USER);
 	if (argc != 3) {
 		syslog(LOG_ERR, "Not enough arguments provided. Expected 3, received %d.\n", argc);
-		return -1;
+		closelog();
+		return 1;
 	}
 	// Open the file (no need to create if the filepath if it doesn't exist)
-	// FILE *fp = fopen(fileName, "w");
-	//
-	// if (fp == NULL) {
-	// 	// TODO: log the error reading the file
-	// 	perror("fopen failed");
-	// 	return 1;
-	// }
+	int fd = open(argv[1], O_WRONLY | O_CREAT | O_TRUNC);
 
+	if (fd == -1) {
+		char *err;
+		if (errno) {
+			asprintf(&err, "error opening file: %s\n", strerror(errno));
+		} else {
+			err = "error opening file\n";
+		}
+		syslog(LOG_ERR, "%s", err);
+		closelog();
+		return 1;
+	}
+	
+	ssize_t wb; // written bytes
+	size_t w_count = sizeof(argv[2]);
+	wb = write(fd, argv[2], w_count);
+	if (wb == -1) {
+		char *err;
+		if (errno) {
+			asprintf(&err, "error writing to file: %s\n", strerror(errno));
+		} else {
+			err = "error writing to file\n";
+		}
+		syslog(LOG_ERR, "%s", err);
+		closelog();
+		return 1;
+	}
+	else if (wb != w_count) {
+		// partial write
+		syslog(LOG_ERR, "partial write performed");
+		closelog();
+		return 1;
+	}
+	syslog(LOG_INFO, "Writing %s to %s", argv[2], argv[1]);
+	closelog();
 	return 0;
 } 
 
