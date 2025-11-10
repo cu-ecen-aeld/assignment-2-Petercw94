@@ -26,7 +26,7 @@ int main(int argc, char *argv[]) {
 		return 1;
 	}
 	// Open the file (no need to create if the filepath if it doesn't exist)
-	int fd = open(argv[1], O_WRONLY | O_CREAT | O_TRUNC);
+	int fd = open(argv[1], O_WRONLY | O_CREAT | O_TRUNC , S_IRUSR | S_IWUSR);
 
 	if (fd == -1) {
 		char *err;
