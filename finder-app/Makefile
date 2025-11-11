@@ -1,10 +1,12 @@
+# default to not cross compile unless specified
+CROSS_COMPILE ?=
+
+CC := $(CROSS_COMPILE)gcc
+TARGET := writer
+SOURCE := writer.c
 
 default:
-	ifeq ($(CROSS_COMPILE), aarch64-none-linux-gnu-)
-		aarch64-none-linux-gnu-gcc writer.c -o writer
-	else
-		gcc writer.c -o writer
+	$(CC) $(SOURCE) -o $(TARGET)
 
 clean:
-	rm writer
-	rm -f *.o
+	rm -f $(TARGET) *.o
